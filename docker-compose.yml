@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  database:
+    image: database_image
+    container_name: postgres_container
+    # build:
+    #   context: .
+    #   dockerfile: postgres.Dockerfile
+    environment:
+      POSTGRES_DB: db_ocupacoes
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345678
+      PGCLIENTENCODING: UTF8
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./data:/csv_data
+    networks:
+      - solr_network
+
+  solr:
+    image: solr_image
+    # build:
+    #   context: .
+    #   dockerfile: sorl.Dockerfile
+    container_name: solr_container
+    ports:
+      - "8983:8983"
+    depends_on:
+      - database
+    volumes:
+      - solr_data:/bitnami/solr
+    networks:
+      - solr_network
+
+  flask:
+    image: flask_image
+    container_name: flask_container
+    # build:
+    #   context: .
+    #   dockerfile: flask.Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - URL_SOLR=http://solr_container:8983/solr/ocupacoes
+    depends_on:
+      - database
+      - solr
+    networks:
+      - solr_network
+
+volumes:
+  postgres_data:
+  solr_data:
+
+networks:
+  solr_network:
+    driver: bridge
+    # name: solr_network
